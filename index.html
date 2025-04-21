@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -24,14 +25,14 @@
             color: var(--text-color);
             background-color: #f5f7ff;
             margin: 0;
-            padding: 2rem;
+            padding: 1rem;
         }
 
         .container {
             max-width: 800px;
             margin: 0 auto;
             background-color: white;
-            padding: 2rem;
+            padding: 1.5rem;
             border-radius: var(--border-radius);
             box-shadow: var(--box-shadow);
         }
@@ -39,8 +40,9 @@
         h1 {
             color: var(--primary-color);
             text-align: center;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
             font-weight: 600;
+            font-size: 1.5rem;
         }
 
         .input-group {
@@ -49,6 +51,7 @@
 
         .input-row {
             display: flex;
+            flex-wrap: wrap;
             align-items: center;
             margin-bottom: 1rem;
             gap: 1rem;
@@ -56,6 +59,7 @@
 
         .input-container {
             flex: 1;
+            min-width: 150px;
         }
 
         label {
@@ -63,6 +67,7 @@
             margin-bottom: 0.5rem;
             font-weight: 400;
             color: var(--secondary-color);
+            font-size: 0.9rem;
         }
 
         input {
@@ -88,7 +93,7 @@
 
         .center-input {
             text-align: center;
-            margin: 2rem 0;
+            margin: 1.5rem 0;
         }
 
         .center-input input {
@@ -104,13 +109,49 @@
             background-color: var(--light-gray);
             padding: 1.5rem;
             border-radius: var(--border-radius);
-            margin-top: 2rem;
+            margin-top: 1.5rem;
         }
 
         .result-section h2 {
             color: var(--secondary-color);
             margin-top: 0;
-            font-size: 1.2rem;
+            font-size: 1.1rem;
+            text-align: center;
+        }
+
+        .result-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .result-box {
+            flex: 1;
+            min-width: 120px;
+            background-color: white;
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            text-align: center;
+        }
+
+        .result-label {
+            font-size: 0.85rem;
+            color: var(--secondary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .result-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .result-value::before {
+            content: "Bs. ";
+            font-size: 0.9rem;
+            color: var(--text-color);
         }
 
         button {
@@ -124,6 +165,8 @@
             transition: all 0.3s ease;
             display: block;
             margin: 1.5rem auto 0;
+            width: 100%;
+            max-width: 200px;
         }
 
         button:hover {
@@ -134,7 +177,7 @@
         .timestamp {
             text-align: center;
             margin-top: 1.5rem;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             color: var(--text-color);
             opacity: 0.8;
         }
@@ -147,6 +190,7 @@
         .controls {
             display: flex;
             justify-content: center;
+            flex-wrap: wrap;
             gap: 1rem;
             margin-top: 1rem;
         }
@@ -157,6 +201,33 @@
 
         .clear-btn:hover {
             background-color: #c0392b;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .input-row {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .input-container {
+                width: 100%;
+            }
+            
+            .result-row {
+                flex-direction: column;
+            }
+            
+            .result-box {
+                width: 100%;
+            }
+            
+            button {
+                max-width: 100%;
+            }
         }
     </style>
 </head>
@@ -197,18 +268,18 @@
 
         <div class="result-section">
             <h2>Resultados de Conversión</h2>
-            <div class="input-row">
-                <div class="input-container">
-                    <label for="paypal-result">PayPal</label>
-                    <input type="number" id="paypal-result" readonly>
+            <div class="result-row">
+                <div class="result-box">
+                    <div class="result-label">PayPal</div>
+                    <div class="result-value" id="paypal-result">0.00</div>
                 </div>
-                <div class="input-container">
-                    <label for="amazon-result">Amazon</label>
-                    <input type="number" id="amazon-result" readonly>
+                <div class="result-box">
+                    <div class="result-label">Amazon</div>
+                    <div class="result-value" id="amazon-result">0.00</div>
                 </div>
-                <div class="input-container">
-                    <label for="clptoday-result">CLPToday</label>
-                    <input type="number" id="clptoday-result" readonly>
+                <div class="result-box">
+                    <div class="result-label">CLPToday</div>
+                    <div class="result-value" id="clptoday-result">0.00</div>
                 </div>
             </div>
         </div>
@@ -221,7 +292,7 @@
             const saveRatesBtn = document.getElementById('save-rates');
             const clearRatesBtn = document.getElementById('clear-rates');
             const lastUpdatedSpan = document.getElementById('last-updated');
-            const resultInputs = {
+            const resultValues = {
                 paypal: document.getElementById('paypal-result'),
                 amazon: document.getElementById('amazon-result'),
                 clptoday: document.getElementById('clptoday-result')
@@ -256,14 +327,23 @@
             // Función para calcular los resultados
             function calculateResults() {
                 const amount = parseFloat(amountInput.value);
-                if (isNaN(amount)) return;
+                if (isNaN(amount)) {
+                    // Si no hay monto, mostrar 0.00
+                    for (const key in resultValues) {
+                        resultValues[key].textContent = '0.00';
+                    }
+                    return;
+                }
 
                 rateInputs.forEach(input => {
                     const rate = parseFloat(input.value);
                     if (!isNaN(rate)) {
                         const resultId = input.id.replace('-rate', '-result');
-                        const result = amount * rate;
-                        document.getElementById(resultId).value = result.toFixed(2);
+                        const result = (amount * rate).toFixed(2);
+                        document.getElementById(resultId).textContent = result;
+                    } else {
+                        const resultId = input.id.replace('-rate', '-result');
+                        document.getElementById(resultId).textContent = '0.00';
                     }
                 });
             }
@@ -302,9 +382,9 @@
                 localStorage.removeItem('savedRates');
                 lastUpdatedSpan.textContent = 'No hay datos guardados';
                 
-                // También limpiar resultados
-                for (const key in resultInputs) {
-                    resultInputs[key].value = '';
+                // Limpiar resultados
+                for (const key in resultValues) {
+                    resultValues[key].textContent = '0.00';
                 }
             }
 
@@ -317,9 +397,7 @@
             rateInputs.forEach(input => {
                 input.addEventListener('blur', function() {
                     highlightLowestRate();
-                    if (amountInput.value) {
-                        calculateResults();
-                    }
+                    calculateResults();
                 });
             });
 
