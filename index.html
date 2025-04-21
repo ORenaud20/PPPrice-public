@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comparador de Tasas</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3f37c9;
+            --accent-color: #4cc9f0;
+            --text-color: #2b2d42;
+            --light-gray: #f8f9fa;
+            --success-color: #2ecc71;
+            --warning-color: #f39c12;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: #f5f7ff;
+            margin: 0;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+        }
+
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 2rem;
+            font-weight: 600;
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .input-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            gap: 1rem;
+        }
+
+        .input-container {
+            flex: 1;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 400;
+            color: var(--secondary-color);
+        }
+
+        input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(76, 201, 240, 0.2);
+        }
+
+        .highlight {
+            font-weight: 600;
+            color: var(--success-color);
+        }
+
+        .center-input {
+            text-align: center;
+            margin: 2rem 0;
+        }
+
+        .center-input input {
+            font-size: 1.2rem;
+            padding: 1rem;
+            border: 2px solid var(--primary-color);
+            max-width: 200px;
+            margin: 0 auto;
+            display: block;
+        }
+
+        .result-section {
+            background-color: var(--light-gray);
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            margin-top: 2rem;
+        }
+
+        .result-section h2 {
+            color: var(--secondary-color);
+            margin-top: 0;
+            font-size: 1.2rem;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: block;
+            margin: 1.5rem auto 0;
+        }
+
+        button:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+
+        .timestamp {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+            color: var(--text-color);
+            opacity: 0.8;
+        }
+
+        .timestamp span {
+            font-weight: 600;
+            color: var(--warning-color);
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .clear-btn {
+            background-color: #e74c3c;
+        }
+
+        .clear-btn:hover {
+            background-color: #c0392b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Comparador de Tasas</h1>
+        
+        <div class="input-group">
+            <div class="input-row">
+                <div class="input-container">
+                    <label for="paypal-rate">Tasa PayPal</label>
+                    <input type="number" step="0.0001" id="paypal-rate" class="rate-input">
+                </div>
+                <div class="input-container">
+                    <label for="amazon-rate">Tasa Amazon</label>
+                    <input type="number" step="0.0001" id="amazon-rate" class="rate-input">
+                </div>
+                <div class="input-container">
+                    <label for="clptoday-rate">Tasa CLPToday</label>
+                    <input type="number" step="0.0001" id="clptoday-rate" class="rate-input">
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="save-rates">Guardar Tasas</button>
+            <button id="clear-rates" class="clear-btn">Limpiar Tasas</button>
+        </div>
+
+        <div class="timestamp">
+            Última actualización: <span id="last-updated">No hay datos guardados</span>
+        </div>
+
+        <div class="center-input">
+            <label for="amount">Monto a Convertir</label>
+            <input type="number" step="0.01" id="amount" placeholder="Ej: 100.00">
+        </div>
+
+        <div class="result-section">
+            <h2>Resultados de Conversión</h2>
+            <div class="input-row">
+                <div class="input-container">
+                    <label for="paypal-result">PayPal</label>
+                    <input type="number" id="paypal-result" readonly>
+                </div>
+                <div class="input-container">
+                    <label for="amazon-result">Amazon</label>
+                    <input type="number" id="amazon-result" readonly>
+                </div>
+                <div class="input-container">
+                    <label for="clptoday-result">CLPToday</label>
+                    <input type="number" id="clptoday-result" readonly>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const rateInputs = document.querySelectorAll('.rate-input');
+            const amountInput = document.getElementById('amount');
+            const saveRatesBtn = document.getElementById('save-rates');
+            const clearRatesBtn = document.getElementById('clear-rates');
+            const lastUpdatedSpan = document.getElementById('last-updated');
+            const resultInputs = {
+                paypal: document.getElementById('paypal-result'),
+                amazon: document.getElementById('amazon-result'),
+                clptoday: document.getElementById('clptoday-result')
+            };
+
+            // Cargar datos guardados al iniciar
+            loadSavedRates();
+
+            // Función para resaltar la tasa más baja
+            function highlightLowestRate() {
+                rateInputs.forEach(input => {
+                    input.classList.remove('highlight');
+                });
+
+                let rates = [];
+                rateInputs.forEach(input => {
+                    if (input.value && !isNaN(input.value)) {
+                        rates.push(parseFloat(input.value));
+                    }
+                });
+
+                if (rates.length > 0) {
+                    const minRate = Math.min(...rates);
+                    rateInputs.forEach(input => {
+                        if (parseFloat(input.value) === minRate) {
+                            input.classList.add('highlight');
+                        }
+                    });
+                }
+            }
+
+            // Función para calcular los resultados
+            function calculateResults() {
+                const amount = parseFloat(amountInput.value);
+                if (isNaN(amount)) return;
+
+                rateInputs.forEach(input => {
+                    const rate = parseFloat(input.value);
+                    if (!isNaN(rate)) {
+                        const resultId = input.id.replace('-rate', '-result');
+                        const result = amount * rate;
+                        document.getElementById(resultId).value = result.toFixed(2);
+                    }
+                });
+            }
+
+            // Guardar tasas en localStorage
+            function saveRates() {
+                const rates = {
+                    paypal: document.getElementById('paypal-rate').value,
+                    amazon: document.getElementById('amazon-rate').value,
+                    clptoday: document.getElementById('clptoday-rate').value,
+                    timestamp: new Date().toLocaleString()
+                };
+                localStorage.setItem('savedRates', JSON.stringify(rates));
+                updateTimestamp(rates.timestamp);
+                highlightLowestRate();
+            }
+
+            // Cargar tasas guardadas
+            function loadSavedRates() {
+                const savedRates = JSON.parse(localStorage.getItem('savedRates'));
+                if (savedRates) {
+                    document.getElementById('paypal-rate').value = savedRates.paypal;
+                    document.getElementById('amazon-rate').value = savedRates.amazon;
+                    document.getElementById('clptoday-rate').value = savedRates.clptoday;
+                    updateTimestamp(savedRates.timestamp);
+                    highlightLowestRate();
+                }
+            }
+
+            // Limpiar tasas
+            function clearRates() {
+                rateInputs.forEach(input => {
+                    input.value = '';
+                    input.classList.remove('highlight');
+                });
+                localStorage.removeItem('savedRates');
+                lastUpdatedSpan.textContent = 'No hay datos guardados';
+                
+                // También limpiar resultados
+                for (const key in resultInputs) {
+                    resultInputs[key].value = '';
+                }
+            }
+
+            // Actualizar el timestamp
+            function updateTimestamp(timestamp) {
+                lastUpdatedSpan.textContent = timestamp;
+            }
+
+            // Event listeners para tasas
+            rateInputs.forEach(input => {
+                input.addEventListener('blur', function() {
+                    highlightLowestRate();
+                    if (amountInput.value) {
+                        calculateResults();
+                    }
+                });
+            });
+
+            // Event listener para el monto
+            amountInput.addEventListener('input', function() {
+                calculateResults();
+            });
+
+            // Event listeners para botones
+            saveRatesBtn.addEventListener('click', saveRates);
+            clearRatesBtn.addEventListener('click', clearRates);
+        });
+    </script>
+</body>
+</html>
