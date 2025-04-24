@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -94,15 +93,27 @@
         .center-input {
             text-align: center;
             margin: 1.5rem 0;
+            position: relative;
         }
 
         .center-input input {
             font-size: 1.2rem;
-            padding: 1rem;
+            padding: 1rem 1rem 1rem 2rem;
             border: 2px solid var(--primary-color);
             max-width: 200px;
             margin: 0 auto;
             display: block;
+        }
+
+        .currency-symbol {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-90px);
+            top: 50%;
+            margin-top: 9px;
+            font-size: 1.2rem;
+            color: var(--text-color);
+            font-weight: 600;
         }
 
         .result-section {
@@ -146,12 +157,30 @@
             font-size: 1.1rem;
             font-weight: 600;
             color: var(--primary-color);
+            margin-bottom: 0.5rem;
         }
 
         .result-value::before {
             content: "Bs. ";
             font-size: 0.9rem;
             color: var(--text-color);
+        }
+
+        .profit-value {
+            font-size: 1rem;
+            color: var(--success-color);
+            font-weight: 600;
+        }
+
+        .profit-value::before {
+            content: "Ganancia: $ ";
+            font-size: 0.8rem;
+            color: var(--text-color);
+        }
+
+        .lowest-profit {
+            background-color: rgba(46, 204, 113, 0.1);
+            border: 1px solid var(--success-color);
         }
 
         button {
@@ -228,6 +257,14 @@
             button {
                 max-width: 100%;
             }
+            
+            .center-input input {
+                padding-left: 2rem;
+            }
+            
+            .currency-symbol {
+                transform: translateX(-80px);
+            }
         }
     </style>
 </head>
@@ -249,6 +286,10 @@
                     <label for="clptoday-rate">Tasa CLPToday</label>
                     <input type="number" step="0.0001" id="clptoday-rate" class="rate-input">
                 </div>
+                <div class="input-container">
+                    <label for="venta-rate">Tasa Venta</label>
+                    <input type="number" step="0.0001" id="venta-rate" class="rate-input">
+                </div>
             </div>
         </div>
 
@@ -262,24 +303,28 @@
         </div>
 
         <div class="center-input">
-            <label for="amount">Monto a Convertir</label>
+            <label for="amount">Monto a convertir</label>
+            <span class="currency-symbol">$</span>
             <input type="number" step="0.01" id="amount" placeholder="Ej: 100.00">
         </div>
 
         <div class="result-section">
             <h2>Resultados de Conversión</h2>
             <div class="result-row">
-                <div class="result-box">
+                <div class="result-box" id="paypal-result-box">
                     <div class="result-label">PayPal</div>
                     <div class="result-value" id="paypal-result">0.00</div>
+                    <div class="profit-value" id="paypal-profit">0.00</div>
                 </div>
-                <div class="result-box">
+                <div class="result-box" id="amazon-result-box">
                     <div class="result-label">Amazon</div>
                     <div class="result-value" id="amazon-result">0.00</div>
+                    <div class="profit-value" id="amazon-profit">0.00</div>
                 </div>
-                <div class="result-box">
+                <div class="result-box" id="clptoday-result-box">
                     <div class="result-label">CLPToday</div>
                     <div class="result-value" id="clptoday-result">0.00</div>
+                    <div class="profit-value" id="clptoday-profit">0.00</div>
                 </div>
             </div>
         </div>
@@ -292,10 +337,24 @@
             const saveRatesBtn = document.getElementById('save-rates');
             const clearRatesBtn = document.getElementById('clear-rates');
             const lastUpdatedSpan = document.getElementById('last-updated');
-            const resultValues = {
-                paypal: document.getElementById('paypal-result'),
-                amazon: document.getElementById('amazon-result'),
-                clptoday: document.getElementById('clptoday-result')
+            
+            // Elementos de resultados
+            const resultElements = {
+                paypal: {
+                    result: document.getElementById('paypal-result'),
+                    profit: document.getElementById('paypal-profit'),
+                    box: document.getElementById('paypal-result-box')
+                },
+                amazon: {
+                    result: document.getElementById('amazon-result'),
+                    profit: document.getElementById('amazon-profit'),
+                    box: document.getElementById('amazon-result-box')
+                },
+                clptoday: {
+                    result: document.getElementById('clptoday-result'),
+                    profit: document.getElementById('clptoday-profit'),
+                    box: document.getElementById('clptoday-result-box')
+                }
             };
 
             // Cargar datos guardados al iniciar
@@ -309,7 +368,7 @@
 
                 let rates = [];
                 rateInputs.forEach(input => {
-                    if (input.value && !isNaN(input.value)) {
+                    if (input.value && !isNaN(input.value) && !input.id.includes('venta')) {
                         rates.push(parseFloat(input.value));
                     }
                 });
@@ -317,35 +376,86 @@
                 if (rates.length > 0) {
                     const minRate = Math.min(...rates);
                     rateInputs.forEach(input => {
-                        if (parseFloat(input.value) === minRate) {
+                        if (parseFloat(input.value) === minRate && !input.id.includes('venta')) {
                             input.classList.add('highlight');
                         }
                     });
                 }
             }
 
+            // Función para calcular ganancia
+            function calculateProfit(amount, rate, ventaRate) {
+                if (!ventaRate || ventaRate <= 0) return 0;
+                const converted = (amount * rate) / ventaRate;
+                return (amount - converted).toFixed(2);
+            }
+
+            // Función para resaltar la mejor ganancia
+            function highlightBestProfit() {
+                // Resetear todos los estilos primero
+                for (const key in resultElements) {
+                    resultElements[key].box.classList.remove('lowest-profit');
+                }
+
+                const profits = [];
+                for (const key in resultElements) {
+                    const profit = parseFloat(resultElements[key].profit.textContent);
+                    if (!isNaN(profit) && profit > 0) {
+                        profits.push({
+                            key: key,
+                            value: profit
+                        });
+                    }
+                }
+
+                if (profits.length > 0) {
+                    // Encontrar la mayor ganancia (valor más alto)
+                    const maxProfit = profits.reduce((max, current) => 
+                        (current.value > max.value ? current : max), profits[0]);
+                    
+                    // Resaltar la mejor ganancia
+                    resultElements[maxProfit.key].box.classList.add('lowest-profit');
+                }
+            }
+
             // Función para calcular los resultados
             function calculateResults() {
                 const amount = parseFloat(amountInput.value);
+                const ventaRate = parseFloat(document.getElementById('venta-rate').value);
+                
                 if (isNaN(amount)) {
-                    // Si no hay monto, mostrar 0.00
-                    for (const key in resultValues) {
-                        resultValues[key].textContent = '0.00';
+                    // Si no hay monto, resetear todo
+                    for (const key in resultElements) {
+                        resultElements[key].result.textContent = '0.00';
+                        resultElements[key].profit.textContent = '0.00';
                     }
+                    highlightBestProfit();
                     return;
                 }
 
-                rateInputs.forEach(input => {
-                    const rate = parseFloat(input.value);
+                // Calcular para cada tasa
+                for (const key in resultElements) {
+                    const rate = parseFloat(document.getElementById(`${key}-rate`).value);
+                    
                     if (!isNaN(rate)) {
-                        const resultId = input.id.replace('-rate', '-result');
-                        const result = (amount * rate).toFixed(2);
-                        document.getElementById(resultId).textContent = result;
+                        // Calcular conversión
+                        const conversion = (amount * rate).toFixed(2);
+                        resultElements[key].result.textContent = conversion;
+                        
+                        // Calcular ganancia si hay tasa de venta
+                        if (!isNaN(ventaRate) && ventaRate > 0) {
+                            const profit = calculateProfit(amount, rate, ventaRate);
+                            resultElements[key].profit.textContent = profit;
+                        } else {
+                            resultElements[key].profit.textContent = '0.00';
+                        }
                     } else {
-                        const resultId = input.id.replace('-rate', '-result');
-                        document.getElementById(resultId).textContent = '0.00';
+                        resultElements[key].result.textContent = '0.00';
+                        resultElements[key].profit.textContent = '0.00';
                     }
-                });
+                }
+
+                highlightBestProfit();
             }
 
             // Guardar tasas en localStorage
@@ -354,22 +464,26 @@
                     paypal: document.getElementById('paypal-rate').value,
                     amazon: document.getElementById('amazon-rate').value,
                     clptoday: document.getElementById('clptoday-rate').value,
+                    venta: document.getElementById('venta-rate').value,
                     timestamp: new Date().toLocaleString()
                 };
                 localStorage.setItem('savedRates', JSON.stringify(rates));
                 updateTimestamp(rates.timestamp);
                 highlightLowestRate();
+                calculateResults();
             }
 
             // Cargar tasas guardadas
             function loadSavedRates() {
                 const savedRates = JSON.parse(localStorage.getItem('savedRates'));
                 if (savedRates) {
-                    document.getElementById('paypal-rate').value = savedRates.paypal;
-                    document.getElementById('amazon-rate').value = savedRates.amazon;
-                    document.getElementById('clptoday-rate').value = savedRates.clptoday;
+                    document.getElementById('paypal-rate').value = savedRates.paypal || '';
+                    document.getElementById('amazon-rate').value = savedRates.amazon || '';
+                    document.getElementById('clptoday-rate').value = savedRates.clptoday || '';
+                    document.getElementById('venta-rate').value = savedRates.venta || '';
                     updateTimestamp(savedRates.timestamp);
                     highlightLowestRate();
+                    calculateResults();
                 }
             }
 
@@ -383,8 +497,10 @@
                 lastUpdatedSpan.textContent = 'No hay datos guardados';
                 
                 // Limpiar resultados
-                for (const key in resultValues) {
-                    resultValues[key].textContent = '0.00';
+                for (const key in resultElements) {
+                    resultElements[key].result.textContent = '0.00';
+                    resultElements[key].profit.textContent = '0.00';
+                    resultElements[key].box.classList.remove('lowest-profit');
                 }
             }
 
@@ -396,7 +512,9 @@
             // Event listeners para tasas
             rateInputs.forEach(input => {
                 input.addEventListener('blur', function() {
-                    highlightLowestRate();
+                    if (!input.id.includes('venta')) {
+                        highlightLowestRate();
+                    }
                     calculateResults();
                 });
             });
