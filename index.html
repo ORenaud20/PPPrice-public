@@ -44,6 +44,34 @@
             font-size: 1.5rem;
         }
 
+        .mode-selection {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .mode-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .mode-btn:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+
+        .hidden {
+            display: none;
+        }
+
         .input-group {
             margin-bottom: 1.5rem;
         }
@@ -145,6 +173,12 @@
             border-radius: var(--border-radius);
             box-shadow: var(--box-shadow);
             text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .result-box:hover {
+            transform: translateY(-3px);
         }
 
         .result-label {
@@ -173,7 +207,7 @@
         }
 
         .profit-value::before {
-            content: "Ganancia: $ ";
+            content: "Ganancia: Bs. ";
             font-size: 0.8rem;
             color: var(--text-color);
         }
@@ -232,6 +266,15 @@
             background-color: #c0392b;
         }
 
+        .back-btn {
+            background-color: #6c757d;
+            margin-bottom: 1rem;
+        }
+
+        .back-btn:hover {
+            background-color: #5a6268;
+        }
+
         @media (max-width: 600px) {
             .container {
                 padding: 1rem;
@@ -269,8 +312,19 @@
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="container" id="main-screen">
         <h1>Comparador de Tasas</h1>
+        
+        <div class="mode-selection">
+            <button class="mode-btn" id="calculated-mode">Modo Calculado</button>
+            <button class="mode-btn" id="free-mode">Modo Libre</button>
+        </div>
+    </div>
+
+    <!-- MODO CALCULADO -->
+    <div class="container hidden" id="calculated-container">
+        <button class="back-btn" id="back-calculated">← Volver</button>
+        <h1>Modo Calculado</h1>
         
         <div class="input-group">
             <div class="input-row">
@@ -287,6 +341,10 @@
                     <input type="number" step="0.0001" id="clptoday-rate" class="rate-input">
                 </div>
                 <div class="input-container">
+                    <label for="bcv-rate">Tasa BCV</label>
+                    <input type="number" step="0.0001" id="bcv-rate" class="rate-input">
+                </div>
+                <div class="input-container">
                     <label for="venta-rate">Tasa Venta</label>
                     <input type="number" step="0.0001" id="venta-rate" class="rate-input">
                 </div>
@@ -294,18 +352,18 @@
         </div>
 
         <div class="controls">
-            <button id="save-rates">Guardar Tasas</button>
-            <button id="clear-rates" class="clear-btn">Limpiar Tasas</button>
+            <button id="save-rates-calc">Guardar Tasas</button>
+            <button id="clear-rates-calc" class="clear-btn">Limpiar Tasas</button>
         </div>
 
         <div class="timestamp">
-            Última actualización: <span id="last-updated">No hay datos guardados</span>
+            Última actualización: <span id="last-updated-calc">No hay datos guardados</span>
         </div>
 
         <div class="center-input">
-            <label for="amount">Monto a convertir</label>
+            <label for="amount-calc">Monto a convertir</label>
             <span class="currency-symbol">$</span>
-            <input type="number" step="0.01" id="amount" placeholder="Ej: 100.00">
+            <input type="number" step="0.01" id="amount-calc" placeholder="Ej: 100.00">
         </div>
 
         <div class="result-section">
@@ -326,207 +384,557 @@
                     <div class="result-value" id="clptoday-result">0.00</div>
                     <div class="profit-value" id="clptoday-profit">0.00</div>
                 </div>
+                <div class="result-box" id="bcv-result-box">
+                    <div class="result-label">BCV</div>
+                    <div class="result-value" id="bcv-result">0.00</div>
+                    <div class="profit-value" id="bcv-profit">0.00</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODO LIBRE -->
+    <div class="container hidden" id="free-container">
+        <button class="back-btn" id="back-free">← Volver</button>
+        <h1>Modo Libre</h1>
+        
+        <div class="input-group">
+            <div class="input-row">
+                <div class="input-container">
+                    <label for="bcv-rate-free">Tasa BCV</label>
+                    <input type="number" step="0.0001" id="bcv-rate-free" class="free-input">
+                </div>
+                <div class="input-container">
+                    <label for="pp-rate-free">Tasa PP</label>
+                    <input type="number" step="0.0001" id="pp-rate-free" class="free-input" readonly>
+                </div>
+                <div class="input-container">
+                    <label for="venta-rate-free">Tasa Venta</label>
+                    <input type="number" step="0.0001" id="venta-rate-free" class="free-input">
+                </div>
+                <div class="input-container">
+                    <label for="tasa13-rate-free">Tasa 13</label>
+                    <input type="number" step="0.0001" id="tasa13-rate-free" class="free-input" readonly>
+                </div>
+                <div class="input-container">
+                    <label for="tasa20-rate-free">Tasa 20</label>
+                    <input type="number" step="0.0001" id="tasa20-rate-free" class="free-input" readonly>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="save-rates-free">Guardar Tasas</button>
+            <button id="clear-rates-free" class="clear-btn">Limpiar Tasas</button>
+        </div>
+
+        <div class="timestamp">
+            Última actualización: <span id="last-updated-free">No hay datos guardados</span>
+        </div>
+
+        <div class="center-input">
+            <label for="amount-free">Monto a convertir</label>
+            <span class="currency-symbol">$</span>
+            <input type="number" step="0.01" id="amount-free" placeholder="Ej: 100.00">
+        </div>
+
+        <div class="result-section">
+            <h2>Resultados de Conversión</h2>
+            <div class="result-row">
+                <div class="result-box" id="pp-result-box">
+                    <div class="result-label">PP</div>
+                    <div class="result-value" id="pp-result">0.00</div>
+                    <div class="profit-value" id="pp-profit">0.00</div>
+                </div>
+                <div class="result-box" id="tasa13-result-box">
+                    <div class="result-label">Tasa 13</div>
+                    <div class="result-value" id="tasa13-result">0.00</div>
+                    <div class="profit-value" id="tasa13-profit">0.00</div>
+                </div>
+                <div class="result-box" id="tasa20-result-box">
+                    <div class="result-label">Tasa 20</div>
+                    <div class="result-value" id="tasa20-result">0.00</div>
+                    <div class="profit-value" id="tasa20-profit">0.00</div>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const rateInputs = document.querySelectorAll('.rate-input');
-            const amountInput = document.getElementById('amount');
-            const saveRatesBtn = document.getElementById('save-rates');
-            const clearRatesBtn = document.getElementById('clear-rates');
-            const lastUpdatedSpan = document.getElementById('last-updated');
+            // Elementos de la pantalla principal
+            const mainScreen = document.getElementById('main-screen');
+            const calculatedModeBtn = document.getElementById('calculated-mode');
+            const freeModeBtn = document.getElementById('free-mode');
             
-            // Elementos de resultados
-            const resultElements = {
-                paypal: {
-                    result: document.getElementById('paypal-result'),
-                    profit: document.getElementById('paypal-profit'),
-                    box: document.getElementById('paypal-result-box')
-                },
-                amazon: {
-                    result: document.getElementById('amazon-result'),
-                    profit: document.getElementById('amazon-profit'),
-                    box: document.getElementById('amazon-result-box')
-                },
-                clptoday: {
-                    result: document.getElementById('clptoday-result'),
-                    profit: document.getElementById('clptoday-profit'),
-                    box: document.getElementById('clptoday-result-box')
-                }
-            };
-
-            // Cargar datos guardados al iniciar
-            loadSavedRates();
-
-            // Función para resaltar la tasa más baja
-            function highlightLowestRate() {
-                rateInputs.forEach(input => {
-                    input.classList.remove('highlight');
+            // Elementos del modo calculado
+            const calculatedContainer = document.getElementById('calculated-container');
+            const backCalculatedBtn = document.getElementById('back-calculated');
+            
+            // Elementos del modo libre
+            const freeContainer = document.getElementById('free-container');
+            const backFreeBtn = document.getElementById('back-free');
+            
+            // Configurar event listeners para navegación
+            calculatedModeBtn.addEventListener('click', function() {
+                mainScreen.classList.add('hidden');
+                calculatedContainer.classList.remove('hidden');
+                initCalculatedMode();
+            });
+            
+            freeModeBtn.addEventListener('click', function() {
+                mainScreen.classList.add('hidden');
+                freeContainer.classList.remove('hidden');
+                initFreeMode();
+            });
+            
+            backCalculatedBtn.addEventListener('click', function() {
+                calculatedContainer.classList.add('hidden');
+                mainScreen.classList.remove('hidden');
+            });
+            
+            backFreeBtn.addEventListener('click', function() {
+                freeContainer.classList.add('hidden');
+                mainScreen.classList.remove('hidden');
+            });
+            
+            // Función para copiar al portapapeles
+            function copyToClipboard(text) {
+                navigator.clipboard.writeText(text).then(() => {
+                    // Opcional: mostrar notificación de copiado
                 });
-
-                let rates = [];
-                rateInputs.forEach(input => {
-                    if (input.value && !isNaN(input.value) && !input.id.includes('venta')) {
-                        rates.push(parseFloat(input.value));
+            }
+            
+            // MODO CALCULADO
+            function initCalculatedMode() {
+                const rateInputs = document.querySelectorAll('#calculated-container .rate-input');
+                const amountInput = document.getElementById('amount-calc');
+                const saveRatesBtn = document.getElementById('save-rates-calc');
+                const clearRatesBtn = document.getElementById('clear-rates-calc');
+                const lastUpdatedSpan = document.getElementById('last-updated-calc');
+                
+                // Elementos de resultados
+                const resultElements = {
+                    paypal: {
+                        result: document.getElementById('paypal-result'),
+                        profit: document.getElementById('paypal-profit'),
+                        box: document.getElementById('paypal-result-box')
+                    },
+                    amazon: {
+                        result: document.getElementById('amazon-result'),
+                        profit: document.getElementById('amazon-profit'),
+                        box: document.getElementById('amazon-result-box')
+                    },
+                    clptoday: {
+                        result: document.getElementById('clptoday-result'),
+                        profit: document.getElementById('clptoday-profit'),
+                        box: document.getElementById('clptoday-result-box')
+                    },
+                    bcv: {
+                        result: document.getElementById('bcv-result'),
+                        profit: document.getElementById('bcv-profit'),
+                        box: document.getElementById('bcv-result-box')
                     }
-                });
+                };
 
-                if (rates.length > 0) {
-                    const minRate = Math.min(...rates);
+                // Cargar datos guardados al iniciar
+                loadSavedRates();
+
+                // Función para resaltar la tasa más baja
+                function highlightLowestRate() {
                     rateInputs.forEach(input => {
-                        if (parseFloat(input.value) === minRate && !input.id.includes('venta')) {
-                            input.classList.add('highlight');
+                        input.classList.remove('highlight');
+                    });
+
+                    let rates = [];
+                    rateInputs.forEach(input => {
+                        if (input.value && !isNaN(input.value) && !input.id.includes('venta') && !input.id.includes('bcv')) {
+                            rates.push(parseFloat(input.value));
                         }
                     });
-                }
-            }
 
-            // Función para calcular ganancia
-            function calculateProfit(amount, rate, ventaRate) {
-                if (!ventaRate || ventaRate <= 0) return 0;
-                const converted = (amount * rate) / ventaRate;
-                return (amount - converted).toFixed(2);
-            }
-
-            // Función para resaltar la mejor ganancia
-            function highlightBestProfit() {
-                // Resetear todos los estilos primero
-                for (const key in resultElements) {
-                    resultElements[key].box.classList.remove('lowest-profit');
-                }
-
-                const profits = [];
-                for (const key in resultElements) {
-                    const profit = parseFloat(resultElements[key].profit.textContent);
-                    if (!isNaN(profit) && profit > 0) {
-                        profits.push({
-                            key: key,
-                            value: profit
+                    if (rates.length > 0) {
+                        const minRate = Math.min(...rates);
+                        rateInputs.forEach(input => {
+                            if (parseFloat(input.value) === minRate && !input.id.includes('venta') && !input.id.includes('bcv')) {
+                                input.classList.add('highlight');
+                            }
                         });
                     }
                 }
 
-                if (profits.length > 0) {
-                    // Encontrar la mayor ganancia (valor más alto)
-                    const maxProfit = profits.reduce((max, current) => 
-                        (current.value > max.value ? current : max), profits[0]);
-                    
-                    // Resaltar la mejor ganancia
-                    resultElements[maxProfit.key].box.classList.add('lowest-profit');
+                // Función para calcular ganancia
+                function calculateProfit(amount, rate, ventaRate) {
+                    if (!ventaRate || ventaRate <= 0) return 0;
+                    const converted = (amount * rate) / ventaRate;
+                    return (amount - converted).toFixed(2);
                 }
-            }
 
-            // Función para calcular los resultados
-            function calculateResults() {
-                const amount = parseFloat(amountInput.value);
-                const ventaRate = parseFloat(document.getElementById('venta-rate').value);
-                
-                if (isNaN(amount)) {
-                    // Si no hay monto, resetear todo
+                // Función para resaltar la mejor ganancia
+                function highlightBestProfit() {
+                    // Resetear todos los estilos primero
                     for (const key in resultElements) {
-                        resultElements[key].result.textContent = '0.00';
-                        resultElements[key].profit.textContent = '0.00';
+                        resultElements[key].box.classList.remove('lowest-profit');
                     }
-                    highlightBestProfit();
-                    return;
+
+                    const profits = [];
+                    for (const key in resultElements) {
+                        const profit = parseFloat(resultElements[key].profit.textContent);
+                        if (!isNaN(profit) && profit > 0) {
+                            profits.push({
+                                key: key,
+                                value: profit
+                            });
+                        }
+                    }
+
+                    if (profits.length > 0) {
+                        // Encontrar la mayor ganancia (valor más alto)
+                        const maxProfit = profits.reduce((max, current) => 
+                            (current.value > max.value ? current : max), profits[0]);
+                        
+                        // Resaltar la mejor ganancia
+                        resultElements[maxProfit.key].box.classList.add('lowest-profit');
+                    }
                 }
 
-                // Calcular para cada tasa
-                for (const key in resultElements) {
-                    const rate = parseFloat(document.getElementById(`${key}-rate`).value);
+                // Función para calcular los resultados
+                function calculateResults() {
+                    const amount = parseFloat(amountInput.value);
+                    const ventaRate = parseFloat(document.getElementById('venta-rate').value);
                     
-                    if (!isNaN(rate)) {
-                        // Calcular conversión
-                        const conversion = (amount * rate).toFixed(2);
-                        resultElements[key].result.textContent = conversion;
-                        
-                        // Calcular ganancia si hay tasa de venta
-                        if (!isNaN(ventaRate) && ventaRate > 0) {
-                            const profit = calculateProfit(amount, rate, ventaRate);
-                            resultElements[key].profit.textContent = profit;
-                        } else {
+                    if (isNaN(amount)) {
+                        // Si no hay monto, resetear todo
+                        for (const key in resultElements) {
+                            resultElements[key].result.textContent = '0.00';
                             resultElements[key].profit.textContent = '0.00';
                         }
-                    } else {
-                        resultElements[key].result.textContent = '0.00';
-                        resultElements[key].profit.textContent = '0.00';
+                        highlightBestProfit();
+                        return;
                     }
+
+                    // Calcular para cada tasa
+                    for (const key in resultElements) {
+                        const rate = parseFloat(document.getElementById(`${key}-rate`).value);
+                        
+                        if (!isNaN(rate)) {
+                            // Calcular conversión
+                            const conversion = (amount * rate).toFixed(2);
+                            resultElements[key].result.textContent = conversion;
+                            
+                            // Calcular ganancia si hay tasa de venta
+                            if (!isNaN(ventaRate) && ventaRate > 0) {
+                                const profit = calculateProfit(amount, rate, ventaRate);
+                                resultElements[key].profit.textContent = profit;
+                            } else {
+                                resultElements[key].profit.textContent = '0.00';
+                            }
+                        } else {
+                            resultElements[key].result.textContent = '0.00';
+                            resultElements[key].profit.textContent = '0.00';
+                        }
+                    }
+
+                    highlightBestProfit();
                 }
 
-                highlightBestProfit();
-            }
-
-            // Guardar tasas en localStorage
-            function saveRates() {
-                const rates = {
-                    paypal: document.getElementById('paypal-rate').value,
-                    amazon: document.getElementById('amazon-rate').value,
-                    clptoday: document.getElementById('clptoday-rate').value,
-                    venta: document.getElementById('venta-rate').value,
-                    timestamp: new Date().toLocaleString()
-                };
-                localStorage.setItem('savedRates', JSON.stringify(rates));
-                updateTimestamp(rates.timestamp);
-                highlightLowestRate();
-                calculateResults();
-            }
-
-            // Cargar tasas guardadas
-            function loadSavedRates() {
-                const savedRates = JSON.parse(localStorage.getItem('savedRates'));
-                if (savedRates) {
-                    document.getElementById('paypal-rate').value = savedRates.paypal || '';
-                    document.getElementById('amazon-rate').value = savedRates.amazon || '';
-                    document.getElementById('clptoday-rate').value = savedRates.clptoday || '';
-                    document.getElementById('venta-rate').value = savedRates.venta || '';
-                    updateTimestamp(savedRates.timestamp);
+                // Guardar tasas en localStorage
+                function saveRates() {
+                    const rates = {
+                        paypal: document.getElementById('paypal-rate').value,
+                        amazon: document.getElementById('amazon-rate').value,
+                        clptoday: document.getElementById('clptoday-rate').value,
+                        bcv: document.getElementById('bcv-rate').value,
+                        venta: document.getElementById('venta-rate').value,
+                        timestamp: new Date().toLocaleString(),
+                        mode: 'calculated'
+                    };
+                    localStorage.setItem('savedRates', JSON.stringify(rates));
+                    updateTimestamp(rates.timestamp);
                     highlightLowestRate();
                     calculateResults();
                 }
-            }
 
-            // Limpiar tasas
-            function clearRates() {
-                rateInputs.forEach(input => {
-                    input.value = '';
-                    input.classList.remove('highlight');
-                });
-                localStorage.removeItem('savedRates');
-                lastUpdatedSpan.textContent = 'No hay datos guardados';
-                
-                // Limpiar resultados
-                for (const key in resultElements) {
-                    resultElements[key].result.textContent = '0.00';
-                    resultElements[key].profit.textContent = '0.00';
-                    resultElements[key].box.classList.remove('lowest-profit');
-                }
-            }
-
-            // Actualizar el timestamp
-            function updateTimestamp(timestamp) {
-                lastUpdatedSpan.textContent = timestamp;
-            }
-
-            // Event listeners para tasas
-            rateInputs.forEach(input => {
-                input.addEventListener('blur', function() {
-                    if (!input.id.includes('venta')) {
+                // Cargar tasas guardadas
+                function loadSavedRates() {
+                    const savedRates = JSON.parse(localStorage.getItem('savedRates'));
+                    if (savedRates && savedRates.mode === 'calculated') {
+                        document.getElementById('paypal-rate').value = savedRates.paypal || '';
+                        document.getElementById('amazon-rate').value = savedRates.amazon || '';
+                        document.getElementById('clptoday-rate').value = savedRates.clptoday || '';
+                        document.getElementById('bcv-rate').value = savedRates.bcv || '';
+                        document.getElementById('venta-rate').value = savedRates.venta || '';
+                        updateTimestamp(savedRates.timestamp);
                         highlightLowestRate();
+                        calculateResults();
                     }
+                }
+
+                // Limpiar tasas
+                function clearRates() {
+                    rateInputs.forEach(input => {
+                        input.value = '';
+                        input.classList.remove('highlight');
+                    });
+                    localStorage.removeItem('savedRates');
+                    lastUpdatedSpan.textContent = 'No hay datos guardados';
+                    
+                    // Limpiar resultados
+                    for (const key in resultElements) {
+                        resultElements[key].result.textContent = '0.00';
+                        resultElements[key].profit.textContent = '0.00';
+                        resultElements[key].box.classList.remove('lowest-profit');
+                    }
+                }
+
+                // Actualizar el timestamp
+                function updateTimestamp(timestamp) {
+                    lastUpdatedSpan.textContent = timestamp;
+                }
+
+                // Event listeners para tasas
+                rateInputs.forEach(input => {
+                    input.addEventListener('blur', function() {
+                        if (!input.id.includes('venta') && !input.id.includes('bcv')) {
+                            highlightLowestRate();
+                        }
+                        calculateResults();
+                    });
+                });
+
+                // Event listener para el monto
+                amountInput.addEventListener('input', function() {
                     calculateResults();
                 });
-            });
 
-            // Event listener para el monto
-            amountInput.addEventListener('input', function() {
-                calculateResults();
-            });
+                // Event listeners para botones
+                saveRatesBtn.addEventListener('click', saveRates);
+                clearRatesBtn.addEventListener('click', clearRates);
+                
+                // Event listeners para copiar resultados
+                for (const key in resultElements) {
+                    resultElements[key].box.addEventListener('click', function() {
+                        const value = resultElements[key].result.textContent.replace('Bs. ', '');
+                        copyToClipboard(value);
+                    });
+                }
+            }
+            
+            // MODO LIBRE
+            function initFreeMode() {
+                const freeInputs = document.querySelectorAll('#free-container .free-input');
+                const amountInput = document.getElementById('amount-free');
+                const saveRatesBtn = document.getElementById('save-rates-free');
+                const clearRatesBtn = document.getElementById('clear-rates-free');
+                const lastUpdatedSpan = document.getElementById('last-updated-free');
+                
+                // Elementos de resultados
+                const resultElements = {
+                    pp: {
+                        result: document.getElementById('pp-result'),
+                        profit: document.getElementById('pp-profit'),
+                        box: document.getElementById('pp-result-box')
+                    },
+                    tasa13: {
+                        result: document.getElementById('tasa13-result'),
+                        profit: document.getElementById('tasa13-profit'),
+                        box: document.getElementById('tasa13-result-box')
+                    },
+                    tasa20: {
+                        result: document.getElementById('tasa20-result'),
+                        profit: document.getElementById('tasa20-profit'),
+                        box: document.getElementById('tasa20-result-box')
+                    }
+                };
 
-            // Event listeners para botones
-            saveRatesBtn.addEventListener('click', saveRates);
-            clearRatesBtn.addEventListener('click', clearRates);
+                // Cargar datos guardados al iniciar
+                loadSavedRates();
+
+                // Función para calcular tasas derivadas
+                function calculateDerivedRates() {
+                    const bcvRate = parseFloat(document.getElementById('bcv-rate-free').value);
+                    const ventaRate = parseFloat(document.getElementById('venta-rate-free').value);
+                    
+                    // Calcular Tasa PP (BCV + 5)
+                    if (!isNaN(bcvRate)) {
+                        document.getElementById('pp-rate-free').value = (bcvRate + 5).toFixed(4);
+                    } else {
+                        document.getElementById('pp-rate-free').value = '';
+                    }
+                    
+                    // Calcular Tasa 13 (Venta - 13%)
+                    if (!isNaN(ventaRate)) {
+                        document.getElementById('tasa13-rate-free').value = (ventaRate * 0.87).toFixed(4);
+                    } else {
+                        document.getElementById('tasa13-rate-free').value = '';
+                    }
+                    
+                    // Calcular Tasa 20 (Venta - 20%)
+                    if (!isNaN(ventaRate)) {
+                        document.getElementById('tasa20-rate-free').value = (ventaRate * 0.80).toFixed(4);
+                    } else {
+                        document.getElementById('tasa20-rate-free').value = '';
+                    }
+                }
+
+                // Función para calcular ganancia
+                function calculateProfit(amount, rate, ventaRate) {
+                    if (!ventaRate || ventaRate <= 0) return 0;
+                    const converted = (amount * rate) / ventaRate;
+                    return (amount - converted).toFixed(2);
+                }
+
+                // Función para resaltar la mejor ganancia
+                function highlightBestProfit() {
+                    // Resetear todos los estilos primero
+                    for (const key in resultElements) {
+                        resultElements[key].box.classList.remove('lowest-profit');
+                    }
+
+                    const profits = [];
+                    for (const key in resultElements) {
+                        const profit = parseFloat(resultElements[key].profit.textContent);
+                        if (!isNaN(profit) && profit > 0) {
+                            profits.push({
+                                key: key,
+                                value: profit
+                            });
+                        }
+                    }
+
+                    if (profits.length > 0) {
+                        // Encontrar la mayor ganancia (valor más alto)
+                        const maxProfit = profits.reduce((max, current) => 
+                            (current.value > max.value ? current : max), profits[0]);
+                        
+                        // Resaltar la mejor ganancia
+                        resultElements[maxProfit.key].box.classList.add('lowest-profit');
+                    }
+                }
+
+                // Función para calcular los resultados
+                function calculateResults() {
+                    const amount = parseFloat(amountInput.value);
+                    const ventaRate = parseFloat(document.getElementById('venta-rate-free').value);
+                    
+                    if (isNaN(amount)) {
+                        // Si no hay monto, resetear todo
+                        for (const key in resultElements) {
+                            resultElements[key].result.textContent = '0.00';
+                            resultElements[key].profit.textContent = '0.00';
+                        }
+                        highlightBestProfit();
+                        return;
+                    }
+
+                    // Calcular para cada tasa
+                    const rates = {
+                        pp: parseFloat(document.getElementById('pp-rate-free').value),
+                        tasa13: parseFloat(document.getElementById('tasa13-rate-free').value),
+                        tasa20: parseFloat(document.getElementById('tasa20-rate-free').value)
+                    };
+                    
+                    for (const key in rates) {
+                        const rate = rates[key];
+                        
+                        if (!isNaN(rate)) {
+                            // Calcular conversión
+                            const conversion = (amount * rate).toFixed(2);
+                            resultElements[key].result.textContent = conversion;
+                            
+                            // Calcular ganancia si hay tasa de venta
+                            if (!isNaN(ventaRate) && ventaRate > 0) {
+                                const profit = calculateProfit(amount, rate, ventaRate);
+                                resultElements[key].profit.textContent = profit;
+                            } else {
+                                resultElements[key].profit.textContent = '0.00';
+                            }
+                        } else {
+                            resultElements[key].result.textContent = '0.00';
+                            resultElements[key].profit.textContent = '0.00';
+                        }
+                    }
+
+                    highlightBestProfit();
+                }
+
+                // Guardar tasas en localStorage
+                function saveRates() {
+                    const rates = {
+                        bcv: document.getElementById('bcv-rate-free').value,
+                        venta: document.getElementById('venta-rate-free').value,
+                        timestamp: new Date().toLocaleString(),
+                        mode: 'free'
+                    };
+                    localStorage.setItem('savedRates', JSON.stringify(rates));
+                    updateTimestamp(rates.timestamp);
+                    calculateResults();
+                }
+
+                // Cargar tasas guardadas
+                function loadSavedRates() {
+                    const savedRates = JSON.parse(localStorage.getItem('savedRates'));
+                    if (savedRates && savedRates.mode === 'free') {
+                        document.getElementById('bcv-rate-free').value = savedRates.bcv || '';
+                        document.getElementById('venta-rate-free').value = savedRates.venta || '';
+                        updateTimestamp(savedRates.timestamp);
+                        calculateDerivedRates();
+                        calculateResults();
+                    }
+                }
+
+                // Limpiar tasas
+                function clearRates() {
+                    document.getElementById('bcv-rate-free').value = '';
+                    document.getElementById('venta-rate-free').value = '';
+                    document.getElementById('pp-rate-free').value = '';
+                    document.getElementById('tasa13-rate-free').value = '';
+                    document.getElementById('tasa20-rate-free').value = '';
+                    
+                    localStorage.removeItem('savedRates');
+                    lastUpdatedSpan.textContent = 'No hay datos guardados';
+                    
+                    // Limpiar resultados
+                    for (const key in resultElements) {
+                        resultElements[key].result.textContent = '0.00';
+                        resultElements[key].profit.textContent = '0.00';
+                        resultElements[key].box.classList.remove('lowest-profit');
+                    }
+                }
+
+                // Actualizar el timestamp
+                function updateTimestamp(timestamp) {
+                    lastUpdatedSpan.textContent = timestamp;
+                }
+
+                // Event listeners para inputs editables
+                document.getElementById('bcv-rate-free').addEventListener('input', function() {
+                    calculateDerivedRates();
+                    calculateResults();
+                });
+                
+                document.getElementById('venta-rate-free').addEventListener('input', function() {
+                    calculateDerivedRates();
+                    calculateResults();
+                });
+
+                // Event listener para el monto
+                amountInput.addEventListener('input', function() {
+                    calculateResults();
+                });
+
+                // Event listeners para botones
+                saveRatesBtn.addEventListener('click', saveRates);
+                clearRatesBtn.addEventListener('click', clearRates);
+                
+                // Event listeners para copiar resultados
+                for (const key in resultElements) {
+                    resultElements[key].box.addEventListener('click', function() {
+                        const value = resultElements[key].result.textContent.replace('Bs. ', '');
+                        copyToClipboard(value);
+                    });
+                }
+            }
         });
     </script>
 </body>
